@@ -9,21 +9,36 @@
         </div>
       </span>
     </div>
-    <h1>CH Máquina</h1>
+
+    <div class="ss-header">
+      <h1>CH Máquina</h1>
+      <div class="ss-accumulator">
+        <h2>Acumulador {{ acumulator }}</h2>
+      </div>
+    </div>
 
     <div class="ss-tables">
-      <div class="ss-table ss-variables-table">
+      <div class="ss-table__container ss-variables-table">
+        <h2>Variables</h2>
         <table>
           <tr
-            v-for="(variable, variableIndex) in variables"
+            v-for="(variable, variableIndex) in variableNames"
             :key="variableIndex"
           >
-            <td>{{ variable }}</td>
+            <td>{{ formatIndex(variable.index) }} {{ variable.name }}</td>
           </tr>
         </table>
       </div>
-      <div class="ss-table ss-labels-table">dos</div>
-      <div class="ss-table ss-file-table">
+      <div class="ss-table__container ss-labels-table">
+        <h2>Etiquetas</h2>
+        <table>
+          <tr v-for="(label, labelIndex) in labels" :key="labelIndex">
+            <td>{{ label.index }} {{ label.name }}</td>
+          </tr>
+        </table>
+      </div>
+      <div class="ss-table__container ss-file-table">
+        <h2>Archivo CH</h2>
         <table>
           <tr
             v-for="(instruction, instructionIndex) in instructions"
@@ -35,7 +50,8 @@
           </tr>
         </table>
       </div>
-      <div class="ss-table ss-memory-table">
+      <div class="ss-table__container ss-memory-table">
+        <h2>Memoria Principal</h2>
         <table>
           <tr
             v-for="(memoryItem, memoryIndex) in mainMemory"
@@ -72,7 +88,7 @@ import { computed } from "@vue/runtime-core";
 import Modal from "./components/Modal.vue";
 
 // la reactividad permite cambiar el valor de la constante y sus dependencias, accion en cadena, su referencia a la userMemory (proxi) no va a cambiar
-const instructions = ref(null); //ref datos nativos string, porque empieza null y cuando el usuario ingresa el valor, cambia a un array de instrucciones
+const instructions = ref(null); // instrucciones del ch, ref datos nativos string, porque empieza null y cuando el usuario ingresa el valor, cambia a un array de instrucciones
 const userMemory = ref(100);
 const kernel = ref(19);
 const isStartModalOpen = ref(true); //variable global para que el modal que active para pedir kernel y userMemory
@@ -83,6 +99,7 @@ const memory = reactive([
     value: 0,
   },
 ]);
+const acumulator = ref(0);
 
 //esta funcion lee el archivo ch, $event nombre especial para identificarlo con event normal, reader objeto de la clase filereader nativo del navegador
 function onLoadFile($event) {
@@ -93,48 +110,52 @@ function onLoadFile($event) {
   };
 }
 
+//carga los elementos del ch sin los comentarios
 function onFileSuccessLoad(fileText) {
   const fileLines = fileText.split("\n");
   instructions.value = fileLines.filter((line) => !line.includes("//"));
 }
 
-/*if(instrucciones[0].lower()=="nueva"):
-            if(len(instrucciones)==3):
-                if(instrucciones[2]=="I"):
-                    instrucciones.append("0")
-                elif(instrucciones[2]=="L"):
-                    instrucciones.append("0")
-                elif(instrucciones[2]=="R"):
-                    instrucciones.append("0")
-                elif(instrucciones[2]=="C"):
-                    instrucciones.append(" ")
-            variables[llave] = { 'tipo': instrucciones[2], 'valor': instrucciones[3] }*/
+//De instruccion toodo lo que diga nueva, se toma de la variable reactiva instrucciones,
 const variables = computed(() => {
   const variables = [];
   const values = instructions.value || [];
-  values.forEach(instruction => {
+  values.forEach((instruction) => {
     if (instruction && instruction.includes("nueva")) {
-      const parts = instruction.split(' ')
-      variables.push({ type: 'variable', value: addDefaultValue(parts), name: parts[1] });
+      const parts = instruction.split(" "); //obtiene el array de la separacion por espacios del archivo ch
+      variables.push({
+        type: "variable",
+        value: addDefaultValue(parts),
+        name: parts[1],
+      });
     }
   });
   return variables;
 });
 
+//agregar el valor de las variables
 function addDefaultValue(parts) {
+  const value = parts[3];
+  const type = parts[2];
   const types = {
-    'I': 0,
-    'L': 0,
-    'R': 0,
-    'C': '',
-  }
-  if (!parts[3]) return types[2]
-  return parts[3]
+    I: 0,
+    L: 0,
+    R: 0,
+    C: "",
+  };
+  //si no hay valor en la variable el fichero ch, retorna el valor por defecto, de los contrario retorna el valor que traiga (original)
+  if (!value) return types[type];
+  return value;
 }
 
-// const variableNames = computed(() => {
-//   re
-// })
+const variableNames = computed(() => {
+  return mainMemory.value.reduce((variables, memoryItem, index) => {
+    if (memoryItem.type === "variable") {
+      variables.push({ name: memoryItem.name, index });
+    }
+    return variables;
+  }, []);
+});
 
 function formatIndex(index) {
   let formattedIndex = index;
@@ -145,7 +166,7 @@ function formatIndex(index) {
 }
 
 function formatInstructionIndex(index) {
-  const indexValue = index + kernel.value + 1;
+  const indexValue = Number(index) + kernel.value + 1;
   return formatIndex(indexValue);
 }
 
@@ -184,13 +205,29 @@ const mainMemory = computed(() => {
     value: instruction,
   }));
 
-  const result = memory.concat(formattedInstructions).concat(variables.value || []);
+  const result = memory
+    .concat(formattedInstructions)
+    .concat(variables.value || []);
 
   for (let index = result.length; index < userMemory.value; index++) {
     result.push({ type: "empty", value: "" });
   }
 
   return result;
+});
+
+const labels = computed(() => {
+  return mainMemory.value.reduce((labels, memoryItem) => {
+    if (
+      memoryItem.type === "instruction" &&
+      memoryItem.value.includes("etiqueta")
+    ) {
+      const [, labelName, labelValue] = memoryItem.value.split(" ");
+      const labelIndex = formatInstructionIndex(labelValue - 1);
+      labels.push({ name: labelName, index: labelIndex });
+    }
+    return labels;
+  }, []);
 });
 </script>
 
@@ -207,14 +244,26 @@ const mainMemory = computed(() => {
   height: 44px;
 }
 
+.ss-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.ss-accumulator {
+  border: 1px solid black;
+  padding: 8px;
+  border-radius: 8px;
+}
+
 .ss-tables {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-auto-rows: auto auto;
 }
 
-.ss-table {
+.ss-table__container {
   border: 1px solid black;
+  padding: 8px;
 }
 
 .ss-file-submenu .ss-file-submenu__actions {
