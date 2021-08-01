@@ -1,5 +1,14 @@
 <template>
   <div class="ss-page">
+    <p>
+      Variables <br />
+      <pre>{{ mainMemoryVariables }}</pre>
+    </p>
+    <p>
+      Labels <br />
+      <!-- Texto preformateado con saltos de linea -->
+      <pre>{{ mainMemoryLabels }}</pre>
+    </p>
     <div class="ss-menu">
       <span class="ss-file-submenu">
         <button>Archivo</button>
@@ -26,6 +35,8 @@
     <div class="ss-header">
       <h1>CH Máquina</h1>
       <div class="ss-accumulator">
+        <!--Referencia reactiva: ref, proxy reflectivo, es una referencia en memoria de un valor global
+         mientras de reactive: es un conjunto de referencias reactivas  -->
         <h2>Acumulador {{ mainMemory[0].value }}</h2>
       </div>
     </div>
@@ -113,6 +124,7 @@ const userMemory = ref(100);
 const kernel = ref(19);
 const isStartModalOpen = ref(true); //variable global para que el modal que active para pedir kernel y userMemory
 // kernel.value = window.prompt('Ingrese el valor del Kernel')
+//espacio reservado para el acomulador y kernel
 const memory = reactive([
   {
     type: "accumulator",
@@ -123,18 +135,19 @@ const isStepByStep = ref(false);
 
 //necesita ser asincrona, debido a que la reactividad impide ver los cambios al tener paso a paso activo
 async function onExecute() {
-  const delay = ms => new Promise(res => setTimeout(res, ms));
-  for (const instructionString of instructions.value) {
+  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+  for (let index = 0; index < instructions.value.length; index++) {
+    const instructionString = instructions.value[index];
     if (isStepByStep.value) {
       await delay(1);
-      alert('Desea continuar?')
+      alert(`Desea continuar? ${instructionString}`);
     }
     const parts = instructionString.split(" ");
     const instruction = parts[0];
     const action = functions[instruction];
     if (action) {
-      action(parts); //ejecutar la funcion
-    }   
+      action(parts, index); //ejecutar la funcion
+    }
   }
 }
 
@@ -179,18 +192,18 @@ const validators = {
   imprima: () => {},
   etiqueta: () => {},
   vaya: () => {},
-  vasasi: () => {},
+  vayasi: () => {},
   retorne: () => {},
 };
 
 // diccionario de las funciones de ejecución
 const functions = {
-  nueva: () => {},
+  nueva: nuevaFunction,
   cargue: cargueFunction,
-  almacene: () => {},
-  lea: () => {},
-  sume: () => {},
-  reste: () => {},
+  almacene: almaceneFunction,
+  lea: leaFunction,
+  sume: sumeFunction,
+  reste: resteFunction,
   multiplique: () => {},
   divida: () => {},
   potencia: () => {},
@@ -205,18 +218,57 @@ const functions = {
   imprima: () => {},
   etiqueta: () => {},
   vaya: () => {},
-  vasasi: () => {},
+  vayasi: vayasiFunction,
   retorne: () => {},
 };
 
+//agregamos el valor de las variables a al diccionario de variables, a partir de la destructuracion
+function nuevaFunction(parts) {
+  const [, name] = parts;
+  const variableValue = addDefaultValue(parts);
+  mainMemoryVariables[name] = variableValue;
+}
+
+//permitimos que el usuario pueda agregar un nuevo valor a la variable y si no lo desea se deja el valor por defecto
+function leaFunction([, variableName]) {
+  const newValue = prompt(`Agregue el valor de ${variableName}`);
+  if (newValue !== "") {
+    mainMemoryVariables[variableName] = newValue;
+  }
+}
+
+//cambia el valor del acomulador, al de la resta del acomulador - valor indicado
 function cargueFunction(parts) {
   const variableName = parts[1];
-  const variable = variables.value.find(
-    (variable) => variable.name === variableName
-  );
-  if (variableName) {
-    mainMemory.value[0].value = variable.value;
+  const variableValue = mainMemoryVariables[variableName];
+  mainMemory.value[0].value = variableValue;
+}
+
+function vayasiFunction([, label1, label2], index) {
+  const accumulator = mainMemory.value[0].value;
+  if (accumulator > 0) {
+    index = mainMemoryLabels[label1];
+  } else if (accumulator > 0) {
+    index = mainMemoryLabels[label2];
   }
+}
+
+function resteFunction([, variableName]) {
+  const currentValue = mainMemory.value[0].value;
+  const subtractValue = mainMemoryVariables[variableName];
+  const newValue = currentValue - subtractValue;
+  mainMemory.value[0].value = newValue;
+}
+
+function sumeFunction([, variableName]) {
+  const currentValue = mainMemory.value[0].value;
+  const sumValue = mainMemoryVariables[variableName];
+  const newValue = currentValue + sumValue;
+  mainMemory.value[0].value = newValue;
+}
+
+function almaceneFunction([, variableName]) {
+  mainMemoryVariables[variableName] = mainMemory.value[0].value;
 }
 
 function checkChFileSintax(fileLines) {
@@ -268,8 +320,9 @@ function addDefaultValue(parts) {
     C: "",
   };
   //si no hay valor en la variable el fichero ch, retorna el valor por defecto, de los contrario retorna el valor que traiga (original)
-  if (!value) return types[type];
-  return value;
+  let valueToReturn = value ?? types[type];
+  if (["I", "R"].includes(type)) valueToReturn = Number(valueToReturn);
+  return valueToReturn;
 }
 
 const variableNames = computed(() => {
@@ -340,6 +393,19 @@ const mainMemory = computed(() => {
   return result;
 });
 
+const mainMemoryLabels = computed(() => {
+  return mainMemory.value.reduce((labels, memoryItem) => {
+    if (
+      memoryItem.type === "instruction" &&
+      memoryItem.value.includes("etiqueta")
+    ) {
+      const [, name, value] = memoryItem.value.split(" ");
+      labels[name] = parseInt(value);
+    }
+    return labels;
+  }, {});
+});
+
 const labels = computed(() => {
   return mainMemory.value.reduce((labels, memoryItem) => {
     if (
@@ -353,6 +419,9 @@ const labels = computed(() => {
     return labels;
   }, []);
 });
+
+//crea como un objeto vacio, no necesita acceder al atributo value, menos nativo, mas alto nivel
+const mainMemoryVariables = reactive({});
 </script>
 
 <style>
