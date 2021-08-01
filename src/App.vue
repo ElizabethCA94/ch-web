@@ -2,18 +2,31 @@
   <div class="ss-page">
     <div class="ss-menu">
       <span class="ss-file-submenu">
-        <button>File</button>
-        <div class="ss-file-submenu__actions">
+        <button>Archivo</button>
+        <span class="ss-file-submenu__actions">
           <!-- accion del usuario al ingresar datos en el input -->
-          <input type="file" @input="onLoadFile" />
-        </div>
+          <button>
+            <label for="files" class="ss-open-action">Abrir</label>
+          </button>
+          <input
+            id="files"
+            style="visibility: hidden"
+            type="file"
+            @input="onLoadFile"
+          />
+        </span>
       </span>
+      <button @click="onExecute">Ejecute</button>
+      <button>Muestre Memoria</button>
+      <button>Pausa</button>
+      <button @click="isStepByStep = !isStepByStep">Paso a paso</button>
+      <button>Salir</button>
     </div>
 
     <div class="ss-header">
       <h1>CH Máquina</h1>
       <div class="ss-accumulator">
-        <h2>Acumulador {{ acumulator }}</h2>
+        <h2>Acumulador {{ mainMemory[0].value }}</h2>
       </div>
     </div>
 
@@ -29,6 +42,11 @@
           </tr>
         </table>
       </div>
+      <div class="ss-laptop">
+        <p>{{ isStepByStep ? "paso a paso" : "" }}</p>
+        <img src="computadora.png" />
+        <p>{{ isStepByStep ? "modo usuario" : "modo kernel" }}</p>
+      </div>
       <div class="ss-table__container ss-labels-table">
         <h2>Etiquetas</h2>
         <table>
@@ -37,6 +55,7 @@
           </tr>
         </table>
       </div>
+
       <div class="ss-table__container ss-file-table">
         <h2>Archivo CH</h2>
         <table>
@@ -50,6 +69,7 @@
           </tr>
         </table>
       </div>
+      <div></div>
       <div class="ss-table__container ss-memory-table">
         <h2>Memoria Principal</h2>
         <table>
@@ -99,7 +119,24 @@ const memory = reactive([
     value: 0,
   },
 ]);
-const acumulator = ref(0);
+const isStepByStep = ref(false);
+
+//necesita ser asincrona, debido a que la reactividad impide ver los cambios al tener paso a paso activo
+async function onExecute() {
+  const delay = ms => new Promise(res => setTimeout(res, ms));
+  for (const instructionString of instructions.value) {
+    if (isStepByStep.value) {
+      await delay(1);
+      alert('Desea continuar?')
+    }
+    const parts = instructionString.split(" ");
+    const instruction = parts[0];
+    const action = functions[instruction];
+    if (action) {
+      action(parts); //ejecutar la funcion
+    }   
+  }
+}
 
 //esta funcion lee el archivo ch, $event nombre especial para identificarlo con event normal, reader objeto de la clase filereader nativo del navegador
 function onLoadFile($event) {
@@ -112,8 +149,95 @@ function onLoadFile($event) {
 
 //carga los elementos del ch sin los comentarios
 function onFileSuccessLoad(fileText) {
-  const fileLines = fileText.split("\n");
-  instructions.value = fileLines.filter((line) => !line.includes("//"));
+  const file = fileText.split("\n");
+  const linesWhitoutComments = file.filter((line) => !line.includes("//"));
+  const hasErrrors = checkChFileSintax(linesWhitoutComments);
+  if (!hasErrrors) {
+    instructions.value = linesWhitoutComments;
+  }
+}
+
+// diccionario de funciones validadoras
+const validators = {
+  nueva: checkNueva,
+  cargue: () => {},
+  almacene: () => {},
+  lea: () => {},
+  sume: () => {},
+  reste: () => {},
+  multiplique: () => {},
+  divida: () => {},
+  potencia: () => {},
+  modulo: () => {},
+  concatene: () => {},
+  elimine: () => {},
+  extraiga: () => {},
+  Y: () => {},
+  O: () => {},
+  NO: () => {},
+  muestre: () => {},
+  imprima: () => {},
+  etiqueta: () => {},
+  vaya: () => {},
+  vasasi: () => {},
+  retorne: () => {},
+};
+
+// diccionario de las funciones de ejecución
+const functions = {
+  nueva: () => {},
+  cargue: cargueFunction,
+  almacene: () => {},
+  lea: () => {},
+  sume: () => {},
+  reste: () => {},
+  multiplique: () => {},
+  divida: () => {},
+  potencia: () => {},
+  modulo: () => {},
+  concatene: () => {},
+  elimine: () => {},
+  extraiga: () => {},
+  Y: () => {},
+  O: () => {},
+  NO: () => {},
+  muestre: () => {},
+  imprima: () => {},
+  etiqueta: () => {},
+  vaya: () => {},
+  vasasi: () => {},
+  retorne: () => {},
+};
+
+function cargueFunction(parts) {
+  const variableName = parts[1];
+  const variable = variables.value.find(
+    (variable) => variable.name === variableName
+  );
+  if (variableName) {
+    mainMemory.value[0].value = variable.value;
+  }
+}
+
+function checkChFileSintax(fileLines) {
+  return fileLines.some((line) => {
+    const parts = line.split(" ");
+    const instruction = parts[0];
+    //manda la instruccion porque es la llave del diccionario validators
+    if (validators[instruction]) {
+      const errorMessage = validators[instruction](parts);
+      if (errorMessage) {
+        alert(errorMessage);
+        return errorMessage;
+      }
+    }
+  });
+}
+
+function checkNueva(parts) {
+  if (parts.length > 4 || parts.length < 3) {
+    return `Error, se estan utilizando mas de 4 operandos ó menos de 3 operandos en la operacion ${parts[0]}`;
+  }
 }
 
 //De instruccion toodo lo que diga nueva, se toma de la variable reactiva instrucciones,
@@ -232,6 +356,10 @@ const labels = computed(() => {
 </script>
 
 <style>
+.ss-menu__container {
+  display: flex;
+}
+
 .ss-page {
   margin-top: 44px;
 }
@@ -255,15 +383,31 @@ const labels = computed(() => {
   border-radius: 8px;
 }
 
+.ss-laptop {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .ss-tables {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-auto-rows: auto auto;
+  grid-template-columns: 1fr 260px 1fr;
+  grid-auto-rows: auto auto auto;
 }
 
 .ss-table__container {
   border: 1px solid black;
   padding: 8px;
+}
+
+.ss-file-submenu {
+  position: relative;
+}
+
+.ss-file-submenu__actions {
+  position: absolute;
+  top: 20px;
+  left: 0;
 }
 
 .ss-file-submenu .ss-file-submenu__actions {
