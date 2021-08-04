@@ -37,7 +37,7 @@
       <h1>CH Máquina</h1>
       <div class="ss-accumulator">
         <!--Referencia reactiva: ref, proxy reflectivo, es una referencia en memoria de un valor global
-         mientras de reactive: es un conjunto de referencias reactivas  -->
+        mientras de reactive: es un conjunto de referencias reactivas  -->
         <h2>Acumulador {{ mainMemory[0].value }}</h2>
       </div>
     </div>
@@ -94,7 +94,7 @@
         </table>
       </div>
     </div>
-    <!-- is open es una propiedad de entrada definida del componenete modal  -->
+    <!-- is open es una propiedad de entrada definida del componenete modal, modal para ingresar el valor de la memoria y el kernel  -->
     <Modal :is-open="isStartModalOpen">
       <h2>Ingrese el valor de la Memoria y Kernel</h2>
       Memoria
@@ -293,7 +293,7 @@ function checkNueva(parts) {
   }
 }
 
-//De instruccion toodo lo que diga nueva, se toma de la variable reactiva instrucciones,
+//De la instruccion del archivo ch se obtiene todo lo que diga nueva, se agrega variables, variable reactiva 
 const variables = computed(() => {
   const variables = [];
   const values = instructions.value || [];
