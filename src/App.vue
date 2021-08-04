@@ -2,6 +2,7 @@
   <div class="ss-page">
     <p>
       Variables <br />
+       <!-- Texto preformateado con saltos de linea -->
       <pre>{{ mainMemoryVariables }}</pre>
     </p>
     <p>
@@ -373,7 +374,8 @@ function onAceptStartData() {
   }
 }
 
-//una propiedad computada es la suma de las propiedades reacitivas, es de solo lectura, no se debe modificar
+//diccionario mainMemory
+//una propiedad computada es la suma de las propiedades reactivas, es de solo lectura, no se debe modificar
 const mainMemory = computed(() => {
   const chInstructions = instructions.value || []; //carga de instrucciones ch
   const formattedInstructions = chInstructions.map((instruction) => ({
@@ -382,6 +384,7 @@ const mainMemory = computed(() => {
     value: instruction,
   }));
 
+  //concatena las instruccion ch con las variables que van a ir cambiando 
   const result = memory
     .concat(formattedInstructions)
     .concat(variables.value || []);
