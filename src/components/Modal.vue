@@ -16,6 +16,7 @@ const props = defineProps({
 
 </script>
 
+// aparece el modal al inicio de la pagina solicitando memoria y kernel 
 <style>
 .ss-modal {
   position: fixed;

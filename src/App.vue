@@ -2,7 +2,7 @@
   <div class="ss-page">
     <p>
       Variables <br />
-       <!-- Texto preformateado con saltos de linea -->
+      <!-- Texto preformateado con saltos de linea -->
       <pre>{{ mainMemoryVariables }}</pre>
     </p>
     <p>
@@ -36,8 +36,7 @@
     <div class="ss-header">
       <h1>CH Máquina</h1>
       <div class="ss-accumulator">
-        <!--Referencia reactiva: ref, proxy reflectivo, es una referencia en memoria de un valor global
-        mientras de reactive: es un conjunto de referencias reactivas  -->
+        <!--Referencia reactiva: ref, proxy reflectivo, es una referencia en memoria de un valor globa  -->
         <h2>Acumulador {{ mainMemory[0].value }}</h2>
       </div>
     </div>
@@ -46,6 +45,8 @@
       <div class="ss-table__container ss-variables-table">
         <h2>Variables</h2>
         <table>
+          <!-- llaves para imprimir el valor en cada iteración. Para iterar el primer array se utiliza v-for. 
+          para mostrar la propiedad del objeto, podemos agregar como segundo argumento una key que imprima el nombre de cada propiedad-->
           <tr
             v-for="(variable, variableIndex) in variableNames"
             :key="variableIndex"
@@ -124,8 +125,7 @@ const instructions = ref(null); // instrucciones del ch, ref datos nativos strin
 const userMemory = ref(100);
 const kernel = ref(19);
 const isStartModalOpen = ref(true); //variable global para que el modal que active para pedir kernel y userMemory
-// kernel.value = window.prompt('Ingrese el valor del Kernel')
-//espacio reservado para el acomulador y kernel
+//espacio reservado para el acumulador, reactive: es un conjunto de referencias reactivas (ref)
 const memory = reactive([
   {
     type: "accumulator",
@@ -223,16 +223,17 @@ const functions = {
   retorne: () => {},
 };
 
-//agregamos el valor de las variables a al diccionario de variables, a partir de la destructuracion
+//agregamos el valor de las variables al diccionario de variables, a partir de la destructuracion
+//El separador de coma se utiliza para omitir valores en un arreglo.
 function nuevaFunction(parts) {
-  const [, name] = parts;
+  const [, name] = parts; //??porque la ,
   const variableValue = addDefaultValue(parts);
   mainMemoryVariables[name] = variableValue;
 }
 
 //permitimos que el usuario pueda agregar un nuevo valor a la variable y si no lo desea se deja el valor por defecto
 function leaFunction([, variableName]) {
-  const newValue = prompt(`Agregue el valor de ${variableName}`);
+  const newValue = prompt(`Agregue el valor de ${variableName}`); //??porque signo $ 
   if (newValue !== "") {
     mainMemoryVariables[variableName] = newValue;
   }
@@ -242,16 +243,33 @@ function leaFunction([, variableName]) {
 function cargueFunction(parts) {
   const variableName = parts[1];
   const variableValue = mainMemoryVariables[variableName];
-  mainMemory.value[0].value = variableValue;
+  mainMemory.value[0].value = variableValue; //?? porque posicion 0
 }
 
+// //Si el valor del acumulador es mayor a cero, va a la instrucción que corresponde a
+// la etiqueta indicada por el primer operando.
+// Si el valor del acumulador es menor a cero, va la instrucción que corresponde a la
+// etiqueta indicada por el segundo operando
+// o Si el acumulador es cero a la siguiente instrucción adyacente a la instrucción
+// vayasi y siga la ejecución a partir de allí.
 function vayasiFunction([, label1, label2], index) {
   const accumulator = mainMemory.value[0].value;
-  if (accumulator > 0) {
-    index = mainMemoryLabels[label1];
-  } else if (accumulator > 0) {
-    index = mainMemoryLabels[label2];
-  }
+  //const labelName = parts[1]
+  //const labelValue = mainMemoryLabels[labelName]
+  console.log("acumulator", accumulator)
+  labels[label1] = parseInt()
+  console.log(parseInt(label1.value))
+
+  //if (accumulator > 0) {
+    //index = mainMemoryLabels[label1];
+    //index = labels.value;
+    //console.log("label1", index)
+  //} 
+  //else if (accumulator < 0) {
+    //index = mainMemoryLabels[label2];
+    //console.log("label2", index)
+
+  //}
 }
 
 function resteFunction([, variableName]) {
@@ -298,7 +316,7 @@ const variables = computed(() => {
   const variables = [];
   const values = instructions.value || [];
   values.forEach((instruction) => {
-    if (instruction && instruction.includes("nueva")) {
+    if (instruction && instruction.includes("nueva")) { //??
       const parts = instruction.split(" "); //obtiene el array de la separacion por espacios del archivo ch
       variables.push({
         type: "variable",
@@ -410,6 +428,7 @@ const mainMemoryLabels = computed(() => {
 });
 
 const labels = computed(() => {
+  // ?? que es reduce
   return mainMemory.value.reduce((labels, memoryItem) => {
     if (
       memoryItem.type === "instruction" &&
