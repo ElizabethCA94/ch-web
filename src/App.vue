@@ -147,7 +147,12 @@ async function onExecute() {
     const instruction = parts[0];
     const action = functions[instruction];
     if (action) {
-      action(parts, index); //ejecutar la funcion
+      console.log(index);
+      // debugger
+      const newIndex = action(parts, index); //ejecutar la funcion
+      if (newIndex !== null && newIndex !== undefined) {
+        index = newIndex;
+      }
     }
   }
 }
@@ -226,14 +231,17 @@ const functions = {
 //agregamos el valor de las variables al diccionario de variables, a partir de la destructuracion
 //El separador de coma se utiliza para omitir valores en un arreglo.
 function nuevaFunction(parts) {
-  const [, name] = parts; //??porque la ,
+  const [, name] = parts; //array partes se compone de partes de la instruccion, nombre de la variable
   const variableValue = addDefaultValue(parts);
   mainMemoryVariables[name] = variableValue;
 }
 
 //permitimos que el usuario pueda agregar un nuevo valor a la variable y si no lo desea se deja el valor por defecto
 function leaFunction([, variableName]) {
-  const newValue = prompt(`Agregue el valor de ${variableName}`); //??porque signo $ 
+  let newValue = prompt(`Agregue el valor de ${variableName}`); //en el input aparece el valor de la variable (nombre de la variable90)
+  if (newValue) {
+    newValue = parseInt(newValue);
+  }
   if (newValue !== "") {
     mainMemoryVariables[variableName] = newValue;
   }
@@ -243,7 +251,7 @@ function leaFunction([, variableName]) {
 function cargueFunction(parts) {
   const variableName = parts[1];
   const variableValue = mainMemoryVariables[variableName];
-  mainMemory.value[0].value = variableValue; //?? porque posicion 0
+  mainMemory.value[0].value = variableValue; //lo primero del array es el acumulador
 }
 
 // //Si el valor del acumulador es mayor a cero, va a la instrucción que corresponde a
@@ -253,23 +261,18 @@ function cargueFunction(parts) {
 // o Si el acumulador es cero a la siguiente instrucción adyacente a la instrucción
 // vayasi y siga la ejecución a partir de allí.
 function vayasiFunction([, label1, label2], index) {
+  let newIndex = null;
   const accumulator = mainMemory.value[0].value;
-  //const labelName = parts[1]
-  //const labelValue = mainMemoryLabels[labelName]
-  console.log("acumulator", accumulator)
-  labels[label1] = parseInt()
-  console.log(parseInt(label1.value))
-
-  //if (accumulator > 0) {
-    //index = mainMemoryLabels[label1];
-    //index = labels.value;
-    //console.log("label1", index)
-  //} 
-  //else if (accumulator < 0) {
-    //index = mainMemoryLabels[label2];
-    //console.log("label2", index)
-
-  //}
+  if (accumulator > 0) {
+    const indexToGo = mainMemoryLabels.value[label1] - 3;
+    newIndex = indexToGo;
+    // debugger;
+  } else if (accumulator < 0) {
+    const indexToGo = mainMemoryLabels.value[label2] - 3;
+    newIndex = indexToGo;
+    // debugger;
+  }
+  return newIndex;
 }
 
 function resteFunction([, variableName]) {
@@ -311,12 +314,13 @@ function checkNueva(parts) {
   }
 }
 
-//De la instruccion del archivo ch se obtiene todo lo que diga nueva, se agrega variables, variable reactiva 
+//De la instruccion del archivo ch se obtiene todo lo que diga nueva, se agrega variables, variable reactiva
 const variables = computed(() => {
   const variables = [];
   const values = instructions.value || [];
   values.forEach((instruction) => {
-    if (instruction && instruction.includes("nueva")) { //??
+    if (instruction && instruction.includes("nueva")) {
+      //??
       const parts = instruction.split(" "); //obtiene el array de la separacion por espacios del archivo ch
       variables.push({
         type: "variable",
@@ -402,7 +406,7 @@ const mainMemory = computed(() => {
     value: instruction,
   }));
 
-  //concatena las instruccion ch con las variables que van a ir cambiando 
+  //concatena las instruccion ch con las variables que van a ir cambiando
   const result = memory
     .concat(formattedInstructions)
     .concat(variables.value || []);
@@ -428,7 +432,7 @@ const mainMemoryLabels = computed(() => {
 });
 
 const labels = computed(() => {
-  // ?? que es reduce
+  // es metodo que sirve para almacenar en un tipo de dato, objeto, array, los datos que vienen de otro array, al ponerle una condicion
   return mainMemory.value.reduce((labels, memoryItem) => {
     if (
       memoryItem.type === "instruction" &&
