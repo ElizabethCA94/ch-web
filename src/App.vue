@@ -320,7 +320,7 @@ const variables = computed(() => {
   const values = instructions.value || [];
   values.forEach((instruction) => {
     if (instruction && instruction.includes("nueva")) {
-      //??
+      //instruction debe existir
       const parts = instruction.split(" "); //obtiene el array de la separacion por espacios del archivo ch
       variables.push({
         type: "variable",
