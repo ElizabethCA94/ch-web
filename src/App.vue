@@ -179,12 +179,13 @@ async function onExecute() {
   //para detener la reactividad por 1 milisegundo
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
   let instructionsLength = 0
-  // permite saber saber el identificador del proceso 
+  // loadsInfo permite saber saber el identificador del proceso 
+  //fileIndex fichero de cada proceso
   for (let fileIndex = 0; fileIndex < loadsInfo.length; fileIndex++) {
     const loadInfo = loadsInfo[fileIndex];
     const startIndex = instructionsLength;
     instructionsLength += loadInfo.linesLength;
-    //saber las instrucciones a que archivo pertenecen
+    //saber las instrucciones a que proceso pertenecen
     const instructionsSection = instructions.value?.slice(
       startIndex,
       instructionsLength,
@@ -459,11 +460,11 @@ const functions = {
   sume: sumeFunction,
   reste: resteFunction,
   multiplique: multipliqueFunction,
-  divida: () => {},
-  potencia: () => {},
-  modulo: () => {},
-  concatene: () => {},
-  elimine: () => {},
+  divida: dividaFunction,
+  potencia: potenciaFunction,
+  modulo: moduloFunction,
+  concatene: concateneFunction,
+  elimine: elimineFunction,
   extraiga: () => {},
   Y: () => {},
   O: () => {},
@@ -485,6 +486,7 @@ function nuevaFunction(parts, index, fileIndex) {
 }
 
 //permitimos que el usuario pueda agregar un nuevo valor a la variable y si no lo desea se deja el valor por defecto
+//Lee por teclado/pantalla el valor a ser asignado a la variable indicado por la variable referida en el operando
 function leaFunction([, variableName], index, fileIndex) {
   let newValue = prompt(`Agregue el valor de ${variableName}`); //en el input aparece el valor de la variable (nombre de la variable90)
   if (newValue) {
@@ -495,7 +497,7 @@ function leaFunction([, variableName], index, fileIndex) {
   }
 }
 
-//cambia el valor del acomulador, al de la resta del acomulador - valor indicado
+//Cárguese/copie en el acumulador el valor almacenado en la variable indicada por el operando.
 function cargueFunction(parts, index, fileIndex) {
   const variableName = parts[1];
   const variableValue = mainMemoryVariables[variableName + fileIndex];
@@ -523,6 +525,7 @@ function vayasiFunction([, label1, label2], index) {
   return newIndex;
 }
 
+//Decremente el acumulador en el valor indicado por la variable que señala el operando.
 // estar en la posicion 1 de ese array variables
 function resteFunction([, variableName], index, fileIndex) {
   const currentValue = mainMemory.value[0].value;
@@ -531,6 +534,7 @@ function resteFunction([, variableName], index, fileIndex) {
   mainMemory.value[0].value = newValue;
 }
 
+//Incremente el valor del acumulador en el valor indicado por la variable señalada por el operando.
 function sumeFunction([, variableName], index, fileIndex) {
   const currentValue = mainMemory.value[0].value;
   const sumValue = mainMemoryVariables[variableName + fileIndex];
@@ -538,18 +542,61 @@ function sumeFunction([, variableName], index, fileIndex) {
   mainMemory.value[0].value = newValue;
 }
 
+//Guarde/copie el valor que hay en el acumulador a la variable indicada por el operando.
 function almaceneFunction([, variableName], index, fileIndex) {
   mainMemoryVariables[variableName + fileIndex] = mainMemory.value[0].value;
 }
 
-function multipliqueFunction([,variableName], fileIndex) {
+//Multiplique el valor del acumulador por el valor indicado por la variable señalada por el operando.
+function multipliqueFunction([,variableName], index, fileIndex) {
   const currentValue = mainMemory.value[0].value;
   const multiplyValue = mainMemoryVariables[variableName + fileIndex];
   const newValue = currentValue + multiplyValue;
   mainMemory.value[0].value = newValue;
 }
 
-// function divida([])
+//Divida el valor del acumulador por el valor indicado por la variable señalada por el operando. El divisor deberá ser una cantidad diferente de cero.
+function dividaFunction([,variableName], index, fileIndex) {
+  const currentValue = mainMemory.value[0].value;
+  const divValue = mainMemoryVariables[variableName + fileIndex];
+  const newValue = currentValue + divValue;
+  mainMemory.value[0].value = newValue;
+}
+
+//Eleve el acumulador a la potencia señalada por el operando(los exponentes pueden ser valores enteros, positivos o negativos)
+function potenciaFunction([,variableName], index, fileIndex) {
+  const currentValue = mainMemory.value[0].value;
+  const powValue = mainMemoryVariables[variableName + fileIndex];
+  const newValue = currentValue ^ powValue;
+  mainMemory.value[0].value = newValue;
+}
+
+//Obtenga el modulo al dividir el valor del acumulador por el valor indicado por la variable señalada por el operando.
+function moduloFunction([,variableName], index, fileIndex) {
+  const currentValue = mainMemory.value[0].value;
+  const modValue = mainMemoryVariables[variableName + fileIndex];
+  const newValue = currentValue % modValue;
+  mainMemory.value[0].value = newValue;
+}
+
+//Genere una cadena que una la cadena dada por el operando a la cadena que hay en el acumulador (Operando alfanumérico)
+function concateneFunction([,variableName], index, fileIndex) {
+  const currentValue = mainMemory.value[0].value;
+  const stringValue = mainMemoryVariables[variableName + fileIndex];
+  const newValue = currentValue.concat(' ', stringValue);
+  mainMemory.value[0].value = newValue;
+}
+
+//Genere una subcadena que elimine cualquier aparición del conjunto de caracteres dados por el operando de la cadena que se encuentra en el acumulador (operando alfanumérico)
+function elimineFunction([,variableName], index, fileIndex) {
+  const currentValue = mainMemory.value[0].value;
+  const deleteValue = mainMemoryVariables[variableName + fileIndex];
+  const newValue = currentValue.filter(function(item) {
+    return item !== deleteValue
+  })
+}
+
+
 
 
 //diccionario, objeto js para los tipos de variable
