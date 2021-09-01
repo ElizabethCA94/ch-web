@@ -92,6 +92,7 @@
         <!-- se crea una funcion para verificar si esta en paso a paso -->
         <p>{{ isStepByStep ? "paso a paso" : "" }}</p>
         <img src="computadora.png" />
+        
         <!-- se crea una funcion para verificar si esta en modo usuario o modo kernel -->
         <p>{{ isStepByStep ? "modo usuario" : "modo kernel" }}</p>
       </div>
@@ -465,16 +466,16 @@ const functions = {
   modulo: moduloFunction,
   concatene: concateneFunction,
   elimine: elimineFunction,
-  extraiga: () => {},
-  Y: () => {},
-  O: () => {},
-  NO: () => {},
-  muestre: () => {},
-  imprima: () => {},
-  etiqueta: () => {},
-  vaya: () => {},
-  vayasi: vayasiFunction,
-  retorne: () => {},
+  // extraiga: extraigaFunction,
+  // Y: YFunction,
+  // O: OFunction,
+  // NO: NOFunction,
+  // muestre: muestreFunction,
+  // imprima: imprimaFunction,
+  // etiqueta: mainMemoryLabels,
+  // vaya: vayaFunction,
+  // vayasi: vayasiFunction,
+  // retorne: retorneFunction,
 };
 
 //agregamos el valor de las variables al diccionario de variables, a partir de la destructuracion
@@ -485,8 +486,6 @@ function nuevaFunction(parts, index, fileIndex) {
   mainMemoryVariables[name + fileIndex] = variableValue;
 }
 
-//permitimos que el usuario pueda agregar un nuevo valor a la variable y si no lo desea se deja el valor por defecto
-//Lee por teclado/pantalla el valor a ser asignado a la variable indicado por la variable referida en el operando
 function leaFunction([, variableName], index, fileIndex) {
   let newValue = prompt(`Agregue el valor de ${variableName}`); //en el input aparece el valor de la variable (nombre de la variable90)
   if (newValue) {
@@ -592,13 +591,47 @@ function elimineFunction([,variableName], index, fileIndex) {
   const currentValue = mainMemory.value[0].value;
   const deleteValue = mainMemoryVariables[variableName + fileIndex];
   const newValue = currentValue.filter(function(item) {
-    return item !== deleteValue
+    return item !== deleteValue;
   })
 }
 
+// //Genere una subcadena que extraiga los primeros caracteres (dados por el valor numérico operando) de la cadena que se encuentra en el acumulador (operando numérico)
+// function extraigaFunction([,variableName], index, fileIndex) {
+//   const currentValue = mainMemory.value[0].value;
+//   const extractValue = mainMemoryVariables[variableName + fileIndex];
+//   const newValue = currentValue.filter(function(item) {
+//     return item !== extractValue
+//   })
+// }
 
+//Produce una operación lógica Y (AND) entre el primer operando y el segundo operando que son variables lógicas y la almacena en el tercer operando.
+function YFunction([,valueA, valueB, variableName], index, fileIndex) {
+  mainMemoryVariables[variableName] = valueA && valueB;
+}
 
+// roduce una operación lógica O (OR) entre el primer operando y el segundo operando que son variables lógicas y la almacena en el tercer operando.
+function OFunction([,valueA, valueB, variableName], index, fileIndex) {
+  mainMemoryVariables[variableName] = valueA || valueB;
+}
 
+//Produce una operación de negación lógica para el primer operando que es una variable lógica y el resultado se almacena en el segundo operando.
+function NOFunction([,valueA, variableName], index, fileIndex) {
+  mainMemoryVariables[variableName] = !valueA;
+}
+
+function muestreFunction([,valueName], index, fileIndex) {
+  alert(mainMemoryVariables[variableName]);
+}
+
+function imprimaFunction() {
+  
+}
+
+// vayaFunction,
+// vayasiFunction,
+// retorneFunction,
+
+  
 //diccionario, objeto js para los tipos de variable
 const types = {
     I: 0,
