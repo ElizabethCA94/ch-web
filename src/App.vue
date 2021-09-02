@@ -1,10 +1,10 @@
 <template>
   <div class="ss-page">
     <pre>{{ mainMemoryVariables }}</pre>
-    loads info
-    <pre>{{ loadsInfo }}</pre>
-    Instructions
-    <pre>{{ instructions }}</pre>
+    <!-- loads info -->
+    <!-- <pre>{{ loadsInfo }}</pre> -->
+    <!-- Instructions -->
+    <!-- <pre>{{ instructions }}</pre> -->
     <label>
       <input v-model="processType" type="radio" value="FCFS" />
       FCFS
@@ -91,10 +91,21 @@
       <div class="ss-laptop">
         <!-- se crea una funcion para verificar si esta en paso a paso -->
         <p>{{ isStepByStep ? "paso a paso" : "" }}</p>
+        <span class="ss-laptop__value">{{ laptopValue }}</span>
         <img src="computadora.png" />
         
         <!-- se crea una funcion para verificar si esta en modo usuario o modo kernel -->
         <p>{{ isStepByStep ? "modo usuario" : "modo kernel" }}</p>
+
+        <div class="ss-laptop">
+          <span class="ss-laptop__value">{{ printerValue }}</span>
+          <img src="printer.png" />
+        </div>
+
+        <div class="ss-laptop">
+          <span class="ss-laptop__value">{{ emailValue }}</span>
+          <img src="email.png" />
+        </div>
       </div>
       <!-- Tabla de etiquetas  -->
       <div class="ss-table__container ss-labels-table">
@@ -153,11 +164,15 @@
   </div>
 </template>
 
+
 <script setup>
 import { reactive, ref } from "@vue/reactivity";
 import { computed } from "@vue/runtime-core";
 import Modal from "./components/Modal.vue";
 
+const laptopValue = ref('');
+const printerValue = ref('');
+const emailValue = ref('');
 const files = reactive([]);
 const priorities = reactive([]);
 const processType = ref("FCFS");
@@ -205,6 +220,9 @@ async function onExecute() {
       if (action) {
         // debugger
         const newIndex = action(parts, index, fileIndex); //ejecutar la funcion
+        if (newIndex === 'break') {
+          break
+        }
         if (newIndex !== null && newIndex !== undefined) {
           index = newIndex;
         }
@@ -224,6 +242,8 @@ function onLoadFile($event) {
 
 const loadsInfo = reactive([]);
 
+const commentsLength = ref(0)
+
 //carga los elementos del ch sin los comentarios
 function onFileSuccessLoad(fileText) {
   // solicitar prioridad
@@ -238,6 +258,7 @@ function onFileSuccessLoad(fileText) {
   }
 
   const file = fileText.split("\n");
+  commentsLength.value = file.filter(line => line.includes("//")).length;
   const linesWhitoutComments = file.filter(line => !line.includes("//"));
   const hasErrrors = checkChFileSintax(linesWhitoutComments);
   if (!hasErrrors) {
@@ -334,6 +355,8 @@ function checkNueva(parts) {
   else if (!Object.keys(types).includes(parts[2])) {
     return `Error, el tipo de dato no es el correcto en la operacion ${parts[0]}`;
   }
+
+  
 }
 
 function checkVayasi(parts) {
@@ -466,16 +489,16 @@ const functions = {
   modulo: moduloFunction,
   concatene: concateneFunction,
   elimine: elimineFunction,
-  // extraiga: extraigaFunction,
-  // Y: YFunction,
-  // O: OFunction,
-  // NO: NOFunction,
-  // muestre: muestreFunction,
-  // imprima: imprimaFunction,
-  // etiqueta: mainMemoryLabels,
-  // vaya: vayaFunction,
-  // vayasi: vayasiFunction,
-  // retorne: retorneFunction,
+  extraiga: extraigaFunction,
+  Y: YFunction,
+  O: OFunction,
+  NO: NOFunction,
+  muestre: muestreFunction,
+  imprima: imprimaFunction,
+  vaya: vayaFunction,
+  vayasi: vayasiFunction,
+  retorne: retorneFunction,
+  email: emailFunction,
 };
 
 //agregamos el valor de las variables al diccionario de variables, a partir de la destructuracion
@@ -513,14 +536,15 @@ function vayasiFunction([, label1, label2], index) {
   let newIndex = null;
   const accumulator = mainMemory.value[0].value;
   if (accumulator > 0) {
-    const indexToGo = mainMemoryLabels.value[label1] - 3;
+    const indexToGo = mainMemoryLabels.value[label1] - commentsLength.value -1;
     newIndex = indexToGo;
     // debugger;
   } else if (accumulator < 0) {
-    const indexToGo = mainMemoryLabels.value[label2] - 3;
+    const indexToGo = mainMemoryLabels.value[label2] - commentsLength.value -1;
     newIndex = indexToGo;
     // debugger;
   }
+  // debugger;
   return newIndex;
 }
 
@@ -595,14 +619,14 @@ function elimineFunction([,variableName], index, fileIndex) {
   })
 }
 
-// //Genere una subcadena que extraiga los primeros caracteres (dados por el valor numérico operando) de la cadena que se encuentra en el acumulador (operando numérico)
-// function extraigaFunction([,variableName], index, fileIndex) {
-//   const currentValue = mainMemory.value[0].value;
-//   const extractValue = mainMemoryVariables[variableName + fileIndex];
-//   const newValue = currentValue.filter(function(item) {
-//     return item !== extractValue
-//   })
-// }
+//Genere una subcadena que extraiga los primeros caracteres (dados por el valor numérico operando) de la cadena que se encuentra en el acumulador (operando numérico)
+function extraigaFunction([,variableName], index, fileIndex) {
+  const currentValue = mainMemory.value[0].value;
+  const extractValue = mainMemoryVariables[variableName + fileIndex];
+  const newValue = currentValue.filter(function(item) {
+    return item !== extractValue
+  })
+}
 
 //Produce una operación lógica Y (AND) entre el primer operando y el segundo operando que son variables lógicas y la almacena en el tercer operando.
 function YFunction([,valueA, valueB, variableName], index, fileIndex) {
@@ -619,19 +643,35 @@ function NOFunction([,valueA, variableName], index, fileIndex) {
   mainMemoryVariables[variableName] = !valueA;
 }
 
+// Presente por pantalla el valor que hay en la variable indicada por el operando, si el operando es acumulador muestre el valor del acumulador.
 function muestreFunction([,valueName], index, fileIndex) {
-  alert(mainMemoryVariables[variableName]);
+  const valueToAdd = mainMemoryVariables[valueName + fileIndex]
+  laptopValue.value += valueToAdd
 }
 
-function imprimaFunction() {
-  
+// Lo mismo que el anterior pero presentándolo en la impresora
+function imprimaFunction([,valueName], index, fileIndex) {
+  const valueToAdd = mainMemoryVariables[valueName + fileIndex]
+  printerValue.value += valueToAdd
 }
 
-// vayaFunction,
-// vayasiFunction,
-// retorneFunction,
+function emailFunction([,valueName], index, fileIndex) {
+  const valueToAdd = mainMemoryVariables[valueName + fileIndex]
+  emailValue.value += valueToAdd
+}
 
-  
+// El programa termina; debe ser la última instrucción del programa y tiene opcionalmente un operando numérico entero 
+function retorneFunction(){
+  return 'break'
+}
+
+// Salte a la instrucción que corresponde a la etiqueta indicada por el operando y siga la ejecución a partir de allí.
+function vayaFunction([,label1], index, fileIndex){
+  let newIndex = null;
+  const indexToGo = mainMemoryLabels.value[label1]  - commentsLength.value -1;
+  return indexToGo;
+}
+
 //diccionario, objeto js para los tipos de variable
 const types = {
     I: 0,
@@ -833,9 +873,18 @@ const noExpropiativeOrder = computed(() => {
 }
 
 .ss-laptop {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+.ss-laptop__value {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 52px;
+  font-size: 20px;  
 }
 
 .ss-tables {

@@ -11,7 +11,7 @@ cargue respuesta
 sume m
 almacene respuesta
 cargue intermedia
-vayasi   iterex iterex
+vayasi iterex iterex
 etiqueta iterex 8 
 //cargue m
 muestre resultado 
